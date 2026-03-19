@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Attendance Tracker</title>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --text-color: #1f2937;
+            --card-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --success-bg: #d1fae5;
+            --success-text: #065f46;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+            --warning: #f59e0b;
+            --locked-bg: #e5e7eb;
+            --locked-text: #6b7280;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #111827;
+            --text-color: #f9fafb;
+            --card-bg: #1f2937;
+            --border-color: #374151;
+            --success-bg: #064e3b;
+            --success-text: #34d399;
+            --danger-bg: #7f1d1d;
+            --danger-text: #f87171;
+            --locked-bg: #374151;
+            --locked-text: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
+        
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover:not(:disabled) { filter: brightness(1.1); }
+        
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover:not(:disabled) { filter: brightness(1.1); }
+
+        .btn-outline { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
+        .btn-outline:hover:not(:disabled) { background-color: var(--border-color); }
+
+        .btn-ghost { background-color: transparent; border: 1px solid transparent; color: var(--text-color); }
+        .btn-ghost.active-present { background-color: var(--success); color: white; border-color: var(--success); }
+        .btn-ghost.active-absent { background-color: var(--danger); color: white; border-color: var(--danger); }
+        .btn-ghost:hover:not(:disabled):not(.active-present):not(.active-absent) { border-color: var(--border-color); }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .toolbar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toolbar-section label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        input, select {
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .eligible { background-color: var(--success-bg); color: var(--success-text); }
+        .not-eligible { background-color: var(--danger-bg); color: var(--danger-text); }
+        .no-data { background-color: var(--border-color); color: var(--text-color); }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 0.75rem;
+            background-color: var(--border-color);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.5s ease-in-out, background-color 0.3s;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: auto;
+            background: var(--bg-color);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .actions button { flex: 1; }
+
+        .percentage-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            border: 1px dashed var(--border-color);
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); color: var(--primary); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-pop { animation: pop 0.4s ease-out; }
+
+        .locked-overlay {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--warning);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            display: none;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        body.is-locked .locked-overlay { display: block; }
+        body.is-locked .action-btn, 
+        body.is-locked #add-student-btn,
+        body.is-locked #add-subject-btn {
+            pointer-events: none;
+            opacity: 0.5;
+            background-color: var(--locked-bg);
+            color: var(--locked-text);
+            border-color: var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="locked-overlay">🔒 System Locked</div>
+    <div class="container">
+        <header>
+            <h1>Attendance Tracker</h1>
+            <div class="header-controls">
+                <button id="theme-btn" class="btn-outline">🌙 Dark Mode</button>
+                <button id="lock-btn" class="btn-outline">🔓 Lock</button>
+                <button id="reset-btn" class="btn-danger">Reset All</button>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <label>Manage Subjects</label>
+                <div class="input-group">
+                    <input type="text" id="subject-name" placeholder="New subject name...">
+                    <button id="add-subject-btn" class="btn-primary">Add</button>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <label>Manage Students</label>
+                <div class="input-group">
+                    <input type="text" id="student-name" placeholder="New student name...">
+                    <button id="add-student-btn" class="btn-primary">Add</button>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <label>Attendance Session</label>
+                <div class="input-group">
+                    <select id="active-subject-select">
+                        <option value="">Select Subject...</option>
+                    </select>
+                    <input type="date" id="active-date">
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <label>Filter & Sort</label>
+                <div class="input-group">
+                    <input type="text" id="search-input" placeholder="Search...">
+                    <select id="sort-select">
+                        <option value="name">Name</option>
+                        <option value="highest">Highest %</option>
+                        <option value="lowest">Lowest %</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="student-grid" id="student-grid">
+            </div>
+    </div>
+
+    <script>
+        // State Management
+        let data = JSON.parse(localStorage.getItem('attendance_data_v2')) || {
+            students: [],
+            subjects: [],
+            records: [] // { studentId, subjectId, date, status: 'present' | 'absent' }
+        };
+        
+        let isLocked = false;
+        let darkMode = localStorage.getItem('theme') === 'dark';
+
+        // DOM Elements
+        const grid = document.getElementById('student-grid');
+        const studentInput = document.getElementById('student-name');
+        const subjectInput = document.getElementById('subject-name');
+        const addStudentBtn = document.getElementById('add-student-btn');
+        const addSubjectBtn = document.getElementById('add-subject-btn');
+        const activeSubjectSelect = document.getElementById('active-subject-select');
+        const activeDateInput = document.getElementById('active-date');
+        const searchInput = document.getElementById('search-input');
+        const sortSelect = document.getElementById('sort-select');
+        const themeBtn = document.getElementById('theme-btn');
+        const lockBtn = document.getElementById('lock-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Initialization
+        function init() {
+            if (darkMode) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeBtn.textContent = '☀️ Light Mode';
+            }
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            activeDateInput.value = today;
+
+            updateSubjectDropdown();
+            render();
+        }
+
+        // Core Functions
+        const saveData = () => localStorage.setItem('attendance_data_v2', JSON.stringify(data));
+        const calculatePercentage = (attended, total) => total === 0 ? 0 : Math.round((attended / total) * 100);
+
+        const addSubject = () => {
+            if (isLocked) return;
+            const name = subjectInput.value.trim();
+            if (!name) return;
+            
+            const id = 'sub_' + Date.now();
+            data.subjects.push({ id, name });
+            
+            subjectInput.value = '';
+            saveData();
+            updateSubjectDropdown(id);
+            render();
+        };
+
+        const addStudent = () => {
+            if (isLocked) return;
+            const name = studentInput.value.trim();
+            if (!name) return;
+            
+            data.students.push({ id: 'stu_' + Date.now(), name });
+            
+            studentInput.value = '';
+            saveData();
+            render();
+        };
+
+        const markAttendance = (studentId, status) => {
+            if (isLocked) return;
+            const subjectId = activeSubjectSelect.value;
+            const date = activeDateInput.value;
+            
+            if (!subjectId) return alert("Please select a subject first!");
+            if (!date) return alert("Please select a date!");
+
+            const existingIndex = data.records.findIndex(r => 
+                r.studentId === studentId && 
+                r.subjectId === subjectId && 
+                r.date === date
+            );
+
+            if (existingIndex >= 0) {
+                data.records[existingIndex].status = status;
+            } else {
+                data.records.push({ studentId, subjectId, date, status });
+            }
+            
+            saveData();
+            render(studentId); 
+        };
+
+        // UI Updates
+        const updateSubjectDropdown = (selectId = null) => {
+            const currentVal = selectId || activeSubjectSelect.value;
+            activeSubjectSelect.innerHTML = '<option value="">Select Subject...</option>' + 
+                data.subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            
+            if (currentVal && data.subjects.some(s => s.id === currentVal)) {
+                activeSubjectSelect.value = currentVal;
+            }
+        };
+
+        const toggleLock = () => {
+            if (isLocked) {
+                const pwd = prompt("Enter password to unlock (1234):");
+                if (pwd === "1234") {
+                    isLocked = false;
+                    lockBtn.textContent = "🔓 Lock";
+                    document.body.classList.remove('is-locked');
+                    studentInput.disabled = subjectInput.disabled = false;
+                } else if (pwd !== null) {
+                    alert("Incorrect password!");
+                }
+            } else {
+                isLocked = true;
+                lockBtn.textContent = "🔒 Unlock";
+                document.body.classList.add('is-locked');
+                studentInput.disabled = subjectInput.disabled = true;
+            }
+        };
+
+        const resetData = () => {
+            if (isLocked) return;
+            if (confirm("Are you sure you want to delete ALL students, subjects, and records?")) {
+                data = { students: [], subjects: [], records: [] };
+                saveData();
+                updateSubjectDropdown();
+                render();
+            }
+        };
+
+        const toggleTheme = () => {
+            darkMode = !darkMode;
+            document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+            themeBtn.textContent = darkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+        };
+
+        // Render Engine
+        const render = (animatedId = null) => {
+            const subjectId = activeSubjectSelect.value;
+            const currentDate = activeDateInput.value;
+            const searchTerm = searchInput.value.toLowerCase();
+            const sortBy = sortSelect.value;
+
+            if (data.students.length === 0) {
+                grid.innerHTML = `<div class="empty-state">No students added yet. Add a student to begin.</div>`;
+                return;
+            }
+
+            if (!subjectId) {
+                grid.innerHTML = `<div class="empty-state">Please select or add a subject to view attendance.</div>`;
+                return;
+            }
+
+            // Calculate stats dynamically for current subject
+            let displayData = data.students.map(student => {
+                const subjectRecords = data.records.filter(r => r.studentId === student.id && r.subjectId === subjectId);
+                const total = subjectRecords.length;
+                const attended = subjectRecords.filter(r => r.status === 'present').length;
+                const percentage = calculatePercentage(attended, total);
+                
+                const todayRecord = subjectRecords.find(r => r.date === currentDate);
+                const todayStatus = todayRecord ? todayRecord.status : null;
+
+                return { ...student, total, attended, percentage, todayStatus };
+            });
+
+            // Filter & Sort
+            displayData = displayData.filter(s => s.name.toLowerCase().includes(searchTerm));
+            displayData.sort((a, b) => {
+                if (sortBy === 'highest') return b.percentage - a.percentage;
+                if (sortBy === 'lowest') return a.percentage - b.percentage;
+                return a.name.localeCompare(b.name);
+            });
+
+            // Build HTML
+            grid.innerHTML = displayData.map(student => {
+                const isEligible = student.percentage >= 75;
+                const statusClass = student.total === 0 ? 'no-data' : (isEligible ? 'eligible' : 'not-eligible');
+                const statusText = student.total === 0 ? 'No Data' : (isEligible ? 'Eligible' : 'Not Eligible');
+                const barColor = student.total === 0 ? 'var(--border-color)' : (isEligible ? 'var(--success)' : 'var(--danger)');
+                const animateClass = animatedId === student.id ? 'animate-pop' : '';
+
+                const presentClass = student.todayStatus === 'present' ? 'active-present' : '';
+                const absentClass = student.todayStatus === 'absent' ? 'active-absent' : '';
+
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="student-name">${student.name}</div>
+                            <div class="status-badge ${statusClass}">${statusText}</div>
+                        </div>
+                        
+                        <div class="stats">
+                            <span>Classes Attended: ${student.attended} / ${student.total}</span>
+                        </div>
+
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${student.percentage}%; background-color: ${barColor};"></div>
+                        </div>
+
+                        <div class="percentage-text ${animateClass}" id="perc-${student.id}">
+                            ${student.percentage}%
+                        </div>
+
+                        <div class="actions">
+                            <button class="btn-ghost action-btn ${presentClass}" onclick="markAttendance('${student.id}', 'present')">
+                                ${student.todayStatus === 'present' ? '✓ Present' : 'Present'}
+                            </button>
+                            <button class="btn-ghost action-btn ${absentClass}" onclick="markAttendance('${student.id}', 'absent')">
+                                ${student.todayStatus === 'absent' ? '✗ Absent' : 'Absent'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (animatedId) {
+                setTimeout(() => {
+                    const el = document.getElementById(`perc-${animatedId}`);
+                    if (el) el.classList.remove('animate-pop');
+                }, 400);
+            }
+        };
+
+        // Event Listeners
+        addStudentBtn.addEventListener('click', addStudent);
+        studentInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStudent(); });
+        
+        addSubjectBtn.addEventListener('click', addSubject);
+        subjectInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addSubject(); });
+
+        activeSubjectSelect.addEventListener('change', () => render());
+        activeDateInput.addEventListener('change', () => render());
+        
+        searchInput.addEventListener('input', () => render());
+        sortSelect.addEventListener('change', () => render());
+        
+        themeBtn.addEventListener('click', toggleTheme);
+        lockBtn.addEventListener('click', toggleLock);
+        resetBtn.addEventListener('click', resetData);
+
+        // Run
+        init();
+    </script>
+</body>
+</html>
